@@ -248,6 +248,22 @@ SETTINGS
   }
 }
 
+# ── Developer-facing access note ────────────────────────────────────────────────
+# Shown directly on the workspace page in the dashboard. Developers should
+# never need this repo, its .env, or admin credentials just to reach their own
+# workspace's API from a local tool — `coder port-forward` works for any
+# authenticated Coder user against workspaces they own.
+
+resource "coder_metadata" "api_access" {
+  count       = data.coder_workspace.me.start_count
+  resource_id = kubernetes_pod.workspace[0].id
+
+  item {
+    key   = "Local API access"
+    value = "coder port-forward ${data.coder_workspace.me.name} --tcp 8000:8000"
+  }
+}
+
 # ── App shortcuts ──────────────────────────────────────────────────────────────
 
 resource "coder_app" "code_server" {

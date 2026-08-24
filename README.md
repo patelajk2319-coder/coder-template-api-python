@@ -54,18 +54,27 @@ task logs                # tail the workspace's startup logs
 
 ## Local API access
 
-The "api-python (docs)" app tab in the Coder dashboard only works from a
-browser with an active Coder session — it's proxied through the dashboard,
-not a plain `localhost:8000`. To point a local tool (Postman, curl, etc.) at
-the running container directly:
+This repo is for whoever owns the template (pushing versions, provisioning
+workspaces on others' behalf, governance metadata) — developers should never
+need it, its `.env`, or its admin credentials just to use their own workspace.
+
+For a developer who already has a workspace running, the workspace page in
+the Coder dashboard shows a "Local API access" metadata item with the exact
+command to run **from their own laptop**, using their own Coder login — no
+repo access, `.env`, or admin credentials involved:
+
+```bash
+coder port-forward <workspace-name> --tcp 8000:8000
+```
+
+That's the same mechanism `task api-forward` below uses — it's kept here only
+as an admin/ops convenience for testing a template before rolling it out
+(it authenticates via `.env`'s `CODER_ADMIN_PASSWORD`, which is exactly why
+it's not appropriate as developer-facing guidance):
 
 ```bash
 task api-forward NAME=<workspace-name>   # localhost:8000 -> workspace:8000
 ```
-
-This tunnels through the same agent connection `coder ssh` uses, so it works
-without a direct network route to the pod. Leave it running and hit
-`http://localhost:8000` locally; `Ctrl+C` to stop.
 
 ## Commands
 
