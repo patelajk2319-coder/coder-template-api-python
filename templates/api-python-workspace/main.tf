@@ -179,6 +179,11 @@ resource "coder_agent" "main" {
       rm -rf /tmp/docker.tgz /tmp/docker
     fi
 
+    # ── go-task (drives api-python's own Taskfile — task build/test/run) ─────
+    if ! command -v task &>/dev/null; then
+      sh -c "$(curl -fsSL https://taskfile.dev/install.sh)" -- -d -b "$HOME/.local/bin" 2>/dev/null
+    fi
+
     # ── Code Server ─────────────────────────────────────────────────────────
     if ! command -v code-server &>/dev/null; then
       curl -fsSL https://code-server.dev/install.sh \
@@ -205,10 +210,15 @@ SETTINGS
       --disable-telemetry \
       "$HOME" > /tmp/code-server.log 2>&1 &
 
-    # ── Clone repository ───────────────────────────────────────────────────────
+    # ── Clone (or update) repository ───────────────────────────────────────────
+    # $HOME is a persistent PVC — on a restart this directory already exists
+    # from a previous boot, so pull the latest instead of only cloning once.
     REPO_DIR="$HOME/$(basename "${data.coder_parameter.repo_url.value}" .git)"
     if [[ ! -d "$REPO_DIR" ]]; then
       git clone --depth=1 "${data.coder_parameter.repo_url.value}" "$REPO_DIR"
+    else
+      git -C "$REPO_DIR" pull --ff-only \
+        || echo "[warn] $REPO_DIR has local changes — skipped pulling latest"
     fi
 
     # ── Docker-in-Docker demo: build and run api-python against the sidecar ──
@@ -218,9 +228,7 @@ SETTINGS
     done
 
     cd "$REPO_DIR"
-    docker build -t api-python:latest .
-    docker rm -f api-python-demo &>/dev/null || true
-    docker run -d --name api-python-demo -p 8000:8000 api-python:latest
+    task build
   EOT
 
   metadata {
