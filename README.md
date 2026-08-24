@@ -38,16 +38,14 @@ Each workspace is a single Kubernetes pod with two containers:
   `DOCKER_HOST=tcp://localhost:2375` — no socket-mount or host Docker access
   needed.
 
-This is the standard privileged-sidecar Docker-in-Docker pattern (the
-alternative, Sysbox, needs a custom node runtime/AMI and is out of scope for
-this demo). The privilege is scoped to one container in one pod, in a
-per-workspace namespace (`coder-ws-<owner>-<workspace>`) whose egress
-NetworkPolicy only allows DNS, HTTP and HTTPS — same isolation boundary as any
-other workspace on this platform.
+The `dind` privilege is scoped to that one container, in a per-workspace
+namespace (`coder-ws-<owner>-<workspace>`) whose egress NetworkPolicy only
+allows DNS, HTTP and HTTPS — same isolation as any other workspace on this
+platform.
 
-On first boot, the startup script clones `api-python`, waits for the sidecar
-to come up, then `docker build`s and runs it — the running container is
-exposed as an app tab (Swagger UI at `/docs`) in the Coder dashboard.
+On first boot, the startup script clones `api-python`, then `task build`s and
+runs it against the sidecar, exposed as an app tab (Swagger UI at `/docs`) in
+the Coder dashboard.
 
 ## Quick start
 
