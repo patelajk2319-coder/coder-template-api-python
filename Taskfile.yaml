@@ -15,9 +15,15 @@ tasks:
       - task: workspace
 
   template:
-    desc: Push the workspace template to Coder
+    desc: Push the workspace template to Coder, versioned from VERSION (bump it first for a new revision)
     cmds:
       - bash scripts/template.sh
+
+  release:
+    desc: Tag and push the current VERSION as a git release (vX.Y.Z)
+    cmds:
+      - git tag "v$(cat VERSION)"
+      - git push origin "v$(cat VERSION)"
 
   workspace:
     desc: Provision a workspace from the template

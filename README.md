@@ -12,6 +12,12 @@ infrastructure. That's owned by
 [coder-demo-eks](https://github.com/patelajk2319-coder/coder-demo-eks) (EKS,
 RDS PostgreSQL, Secrets Manager, Coder itself).
 
+Versioned with [semantic versioning](https://semver.org/) — see `VERSION` and
+the repo's git tags (`vX.Y.Z`). `task template` pushes a new Coder template
+revision named after whatever's currently in `VERSION`, so bump it before
+pushing a new revision (pushing the same version name twice fails — Coder
+requires unique template version names).
+
 ## Prerequisites
 
 - `coder-demo-eks` deployed (`task infra` → `task coder` → `task init`) and its
@@ -81,7 +87,8 @@ task api-forward NAME=<workspace-name>   # localhost:8000 -> workspace:8000
 | Command          | Description                                                |
 |------------------|-------------------------------------------------------------|
 | `task up`        | Push the template and provision a workspace                 |
-| `task template`  | Push/update the template only                               |
+| `task template`  | Push/update the template, versioned from `VERSION`          |
+| `task release`   | Tag and push the current `VERSION` as a git release (`vX.Y.Z`) |
 | `task workspace` | Provision a workspace (`NAME=<name>` to override the name)   |
 | `task logs`      | Stream startup logs from the active workspace                |
 | `task api-forward` | Forward a workspace's port 8000 to `localhost` (`NAME=`, `PORT=`) |

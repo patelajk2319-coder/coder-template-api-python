@@ -33,9 +33,7 @@ require_coder_reachable
 
 TEMPLATE_NAME="api-python-workspace"
 
-# Exact git tag if on a tagged commit, otherwise <short-hash>-<epoch> to ensure uniqueness.
-VERSION=$(git -C "${ROOT_DIR}" describe --tags --exact-match 2>/dev/null \
-  || echo "$(git -C "${ROOT_DIR}" rev-parse --short HEAD)-$(date +%s)")
+VERSION="$(cat "${ROOT_DIR}/VERSION")"
 
 GOVERNANCE_DESC="owner: ${TEMPLATE_OWNER} | cost-centre: ${TEMPLATE_COST_CENTRE} | team: ${TEMPLATE_TEAM} | env: ${TEMPLATE_ENV}"
 
