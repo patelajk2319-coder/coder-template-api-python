@@ -31,6 +31,14 @@ tasks:
     cmds:
       - bash scripts/logs.sh
 
+  api-forward:
+    desc: Forward a workspace's api-python port to localhost, for tools like Postman
+    vars:
+      NAME: '{{.NAME | default "dev-workspace"}}'
+      PORT: '{{.PORT | default "8000"}}'
+    cmds:
+      - bash scripts/api_forward.sh "{{.NAME}}" "{{.PORT}}"
+
   clean:
     desc: Delete all Coder workspaces and templates (leaves cluster and Coder running)
     cmds:

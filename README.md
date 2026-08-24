@@ -52,13 +52,29 @@ task up                 # push the template, provision a workspace
 task logs                # tail the workspace's startup logs
 ```
 
+## Local API access
+
+The "api-python (docs)" app tab in the Coder dashboard only works from a
+browser with an active Coder session — it's proxied through the dashboard,
+not a plain `localhost:8000`. To point a local tool (Postman, curl, etc.) at
+the running container directly:
+
+```bash
+task api-forward NAME=<workspace-name>   # localhost:8000 -> workspace:8000
+```
+
+This tunnels through the same agent connection `coder ssh` uses, so it works
+without a direct network route to the pod. Leave it running and hit
+`http://localhost:8000` locally; `Ctrl+C` to stop.
+
 ## Commands
 
-| Command         | Description                                              |
-|-----------------|-----------------------------------------------------------|
-| `task up`       | Push the template and provision a workspace               |
-| `task template` | Push/update the template only                             |
-| `task workspace`| Provision a workspace (`NAME=<name>` to override the name) |
-| `task logs`     | Stream startup logs from the active workspace              |
-| `task clean`    | Delete all workspaces and templates (Coder stays running)  |
-| `task validate` | `terraform fmt`/`validate` + `shellcheck`                  |
+| Command          | Description                                                |
+|------------------|-------------------------------------------------------------|
+| `task up`        | Push the template and provision a workspace                 |
+| `task template`  | Push/update the template only                               |
+| `task workspace` | Provision a workspace (`NAME=<name>` to override the name)   |
+| `task logs`      | Stream startup logs from the active workspace                |
+| `task api-forward` | Forward a workspace's port 8000 to `localhost` (`NAME=`, `PORT=`) |
+| `task clean`     | Delete all workspaces and templates (Coder stays running)    |
+| `task validate`  | `terraform fmt`/`validate` + `shellcheck`                     |
