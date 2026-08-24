@@ -73,24 +73,13 @@ repo access, `.env`, or admin credentials involved:
 coder port-forward <workspace-name> --tcp 8000:8000
 ```
 
-That's the same mechanism `task api-forward` below uses — it's kept here only
-as an admin/ops convenience for testing a template before rolling it out
-(it authenticates via `.env`'s `CODER_ADMIN_PASSWORD`, which is exactly why
-it's not appropriate as developer-facing guidance):
-
-```bash
-task api-forward NAME=<workspace-name>   # localhost:8000 -> workspace:8000
-```
-
 ## Commands
 
-| Command          | Description                                                |
-|------------------|-------------------------------------------------------------|
-| `task up`        | Push the template and provision a workspace                 |
-| `task template`  | Push/update the template, versioned from `VERSION`          |
-| `task release`   | Tag and push the current `VERSION` as a git release (`vX.Y.Z`) |
-| `task workspace` | Provision a workspace (`NAME=<name>` to override the name)   |
-| `task logs`      | Stream startup logs from the active workspace                |
-| `task api-forward` | Forward a workspace's port 8000 to `localhost` (`NAME=`, `PORT=`) |
-| `task clean`     | Delete all workspaces and templates (Coder stays running)    |
-| `task validate`  | `terraform fmt`/`validate` + `shellcheck`                     |
+| Command          | Description                                                    |
+|------------------|-------------------------------------------------------------------|
+| `task up`        | Push the template and provision a workspace                       |
+| `task template`  | Push/update the template, versioned from `VERSION`                 |
+| `task release`   | Tag and push the current `VERSION` as a git release (`vX.Y.Z`)      |
+| `task workspace` | Provision a workspace (`NAME=<name>` to override the name)          |
+| `task logs`      | Stream startup logs from the active workspace                       |
+| `task validate`  | `terraform fmt`/`validate` + `shellcheck`                            |
