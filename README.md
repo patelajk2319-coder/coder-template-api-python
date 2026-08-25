@@ -6,15 +6,8 @@ Docker-in-Docker on Coder: even inside a Kubernetes-backed, redirected
 workspace, a developer can still `docker build`/`docker run` like they would
 locally.
 
-This repo only pushes a template and provisions workspaces against an
-already-running Coder instance — it never touches the underlying
-infrastructure. That's owned by
-[coder-demo-eks](https://github.com/patelajk2319-coder/coder-demo-eks) (EKS,
-RDS PostgreSQL, Secrets Manager, Coder itself).
-
-Versioned with [semantic versioning](https://semver.org/) — see `VERSION` and
-the repo's git tags (`vX.Y.Z`). `task template` pushes a new Coder template
-revision named after whatever's currently in `VERSION`, so bump it before
+## Versioning
+`task template` pushes a new Coder template revision named after whatever's currently in `VERSION`, so bump it before
 pushing a new revision (pushing the same version name twice fails — Coder
 requires unique template version names).
 
@@ -44,8 +37,7 @@ allows DNS, HTTP and HTTPS — same isolation as any other workspace on this
 platform.
 
 On first boot, the startup script clones `api-python`, then `task build`s and
-runs it against the sidecar, exposed as an app tab (Swagger UI at `/docs`) in
-the Coder dashboard.
+runs it against the sidecar.
 
 ## Quick start
 
@@ -58,14 +50,10 @@ task logs                # tail the workspace's startup logs
 
 ## Local API access
 
-This repo is for whoever owns the template (pushing versions, provisioning
-workspaces on others' behalf, governance metadata) — developers should never
-need it, its `.env`, or its admin credentials just to use their own workspace.
+This repo is for whoever owns the template — developers should never
+need it.
 
-For a developer who already has a workspace running, the workspace page in
-the Coder dashboard shows a "Local API access" metadata item with the exact
-command to run **from their own laptop**, using their own Coder login — no
-repo access, `.env`, or admin credentials involved:
+Developers can run the following command to get connect to a workspace running this template from their local machine
 
 ```bash
 coder port-forward <workspace-name> --tcp 8000:8000
@@ -75,7 +63,7 @@ coder port-forward <workspace-name> --tcp 8000:8000
 
 | Command          | Description                                                    |
 |------------------|-------------------------------------------------------------------|
-| `task up`        | Push the template and provision a workspace                       |
+| `task up`        | Push the template                      |
 | `task template`  | Push/update the template, versioned from `VERSION`                 |
 | `task release`   | Tag and push the current `VERSION` as a git release (`vX.Y.Z`)      |
 | `task workspace` | Provision a workspace (`NAME=<name>` to override the name)          |

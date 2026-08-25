@@ -12,7 +12,6 @@ tasks:
     desc: Full demo — push template, provision a developer workspace
     cmds:
       - task: template
-      - task: workspace
 
   template:
     desc: Push the workspace template to Coder, versioned from VERSION (bump it first for a new revision)
@@ -37,9 +36,3 @@ tasks:
     cmds:
       - bash scripts/logs.sh
 
-  validate:
-    desc: Terraform fmt + validate and shellcheck
-    cmds:
-      - terraform -chdir=templates/api-python-workspace fmt -check
-      - terraform -chdir=templates/api-python-workspace validate
-      - shellcheck scripts/*.sh scripts/lib/coder.sh
