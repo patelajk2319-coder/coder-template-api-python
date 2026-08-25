@@ -200,7 +200,7 @@ resource "coder_agent" "main" {
 SETTINGS
     fi
 
-    for ext in ms-python.python hashicorp.terraform ms-azuretools.vscode-docker; do
+    for ext in ms-python.python ms-azuretools.vscode-docker; do
       code-server --install-extension "$ext" --force &>/dev/null || true
     done
 
@@ -371,9 +371,8 @@ resource "kubernetes_pod" "workspace" {
 
     # Docker-in-Docker sidecar — privileged, root, shares the pod network
     # namespace so the workspace container reaches it over localhost:2375.
-    # This is the standard privileged-sidecar DinD pattern (vs. Sysbox, which
-    # needs a custom node runtime/AMI); documented tradeoff, scoped to this
-    # one pod and still bound by the namespace's egress NetworkPolicy above.
+    # Scoped to this one pod, still bound by the namespace's egress
+    # NetworkPolicy above.
     container {
       name  = "dind"
       image = "docker:27-dind"
@@ -389,7 +388,7 @@ resource "kubernetes_pod" "workspace" {
         value = ""
       }
 
-      args = ["--host=tcp://0.0.0.0:2375", "--host=unix:///var/run/docker.sock"]
+      args = ["--host=tcp://0.0.0.0:2375"]
 
       resources {
         requests = {
