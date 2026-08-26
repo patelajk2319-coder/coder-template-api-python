@@ -35,6 +35,14 @@ TEMPLATE_NAME="api-python-workspace"
 
 VERSION="$(cat "${ROOT_DIR}/VERSION")"
 
+# Routes builds to a specific external provisioner (e.g. a team-owned
+# cluster) instead of the control plane's built-in ones. Optional — leave
+# PROVISIONER_TAG unset in .env to keep using the built-in provisioners.
+PROVISIONER_TAG_FLAGS=()
+if [[ -n "${PROVISIONER_TAG:-}" ]]; then
+  PROVISIONER_TAG_FLAGS=(--provisioner-tag "${PROVISIONER_TAG}")
+fi
+
 GOVERNANCE_DESC="owner: ${TEMPLATE_OWNER} | cost-centre: ${TEMPLATE_COST_CENTRE} | team: ${TEMPLATE_TEAM} | env: ${TEMPLATE_ENV}"
 
 # ── Authenticate ───────────────────────────────────────────────────────────────
@@ -50,7 +58,8 @@ coder templates push "${TEMPLATE_NAME}" \
   --directory "${ROOT_DIR}/templates/${TEMPLATE_NAME}" \
   --name "${VERSION}" \
   --yes \
-  --variable "github_token=${GITHUB_TOKEN}"
+  --variable "github_token=${GITHUB_TOKEN}" \
+  "${PROVISIONER_TAG_FLAGS[@]}"
 
 TEMPLATE_ID=$(curl -sf \
   -H "Coder-Session-Token: ${TOKEN}" \
