@@ -260,13 +260,6 @@ module "code_server" {
   settings   = { "workbench.colorTheme" = "Default Dark Modern" }
 }
 
-module "vscode_desktop" {
-  source   = "registry.coder.com/coder/vscode-desktop/coder"
-  version  = "1.2.1"
-  agent_id = coder_agent.main.id
-  folder   = local.repo_dir
-}
-
 # ── Workspace pod ──────────────────────────────────────────────────────────────
 
 resource "kubernetes_pod" "workspace" {
