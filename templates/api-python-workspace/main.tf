@@ -159,10 +159,12 @@ resource "coder_agent" "main" {
     set -e
 
     # Tools install into $HOME/.local/bin on the PVC — first boot installs, restarts skip.
+    # $HOME/.venv/bin takes priority so task run's bare `uvicorn` resolves there,
+    # not the base image's externally-managed system Python.
     mkdir -p "$HOME/.local/bin"
-    export PATH="$HOME/.local/bin:$PATH"
-    grep -qxF 'export PATH="$HOME/.local/bin:$PATH"' "$HOME/.bashrc" || \
-      echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+    export PATH="$HOME/.venv/bin:$HOME/.local/bin:$PATH"
+    grep -qxF 'export PATH="$HOME/.venv/bin:$HOME/.local/bin:$PATH"' "$HOME/.bashrc" || \
+      echo 'export PATH="$HOME/.venv/bin:$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
 
     # ── Git identity ───────────────────────────────────────────────────────────
     git config --global user.name  "${data.coder_workspace_owner.me.full_name != "" ? data.coder_workspace_owner.me.full_name : data.coder_workspace_owner.me.name}"
@@ -196,6 +198,13 @@ resource "coder_agent" "main" {
       git -C "$REPO_DIR" pull --ff-only \
         || echo "[warn] $REPO_DIR has local changes — skipped pulling latest"
     fi
+
+    # ── Python venv — mirrors a developer's own laptop setup, so task run's
+    # bare `uvicorn --reload` works the same as it would outside a workspace.
+    # $HOME is a persistent PVC — venv survives restarts, only created once;
+    # pip install re-runs every boot (cheap no-op) to pick up requirements.txt changes.
+    [[ -d "$HOME/.venv" ]] || python3 -m venv "$HOME/.venv"
+    "$HOME/.venv/bin/pip" install --quiet -r "$REPO_DIR/requirements.txt"
 
     # ── Docker-in-Docker demo: build and run api-python against the sidecar ──
     for i in $(seq 1 30); do
