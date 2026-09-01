@@ -267,22 +267,6 @@ module "vscode_desktop" {
   folder   = local.repo_dir
 }
 
-resource "coder_app" "api_python" {
-  agent_id     = coder_agent.main.id
-  slug         = "api-python"
-  display_name = "api-python (docs)"
-  icon         = "/icon/python.svg"
-  url          = "http://localhost:8000/docs"
-  subdomain    = false
-  share        = "owner"
-
-  healthcheck {
-    url       = "http://localhost:8000/docs"
-    interval  = 5
-    threshold = 6
-  }
-}
-
 # ── Workspace pod ──────────────────────────────────────────────────────────────
 
 resource "kubernetes_pod" "workspace" {
