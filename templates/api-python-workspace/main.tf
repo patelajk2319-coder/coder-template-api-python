@@ -184,32 +184,6 @@ resource "coder_agent" "main" {
       sh -c "$(curl -fsSL https://taskfile.dev/install.sh)" -- -d -b "$HOME/.local/bin" 2>/dev/null
     fi
 
-    # ── Code Server ─────────────────────────────────────────────────────────
-    if ! command -v code-server &>/dev/null; then
-      curl -fsSL https://code-server.dev/install.sh \
-        | sh -s -- --method=standalone --prefix="$HOME/.local" 2>&1 | tail -3
-    fi
-
-    SETTINGS_FILE="$HOME/.local/share/code-server/User/settings.json"
-    if [[ ! -f "$SETTINGS_FILE" ]]; then
-      mkdir -p "$(dirname "$SETTINGS_FILE")"
-      cat > "$SETTINGS_FILE" <<'SETTINGS'
-{
-  "workbench.colorTheme": "Default Dark Modern"
-}
-SETTINGS
-    fi
-
-    for ext in ms-python.python ms-azuretools.vscode-docker; do
-      code-server --install-extension "$ext" --force &>/dev/null || true
-    done
-
-    code-server \
-      --auth none \
-      --port 13337 \
-      --disable-telemetry \
-      "$HOME" > /tmp/code-server.log 2>&1 &
-
     # ── Clone (or update) repository ───────────────────────────────────────────
     # $HOME is a persistent PVC — on a restart this directory already exists
     # from a previous boot, so pull the latest instead of only cloning once.
@@ -274,20 +248,14 @@ resource "coder_metadata" "api_access" {
 
 # ── App shortcuts ──────────────────────────────────────────────────────────────
 
-resource "coder_app" "code_server" {
-  agent_id     = coder_agent.main.id
-  slug         = "code-server"
-  display_name = "VS Code (Browser)"
-  url          = "http://localhost:13337/?folder=/home/coder/${basename(trimsuffix(data.coder_parameter.repo_url.value, ".git"))}"
-  icon         = "/icon/code.svg"
-  subdomain    = false
-  share        = "owner"
+module "code_server" {
+  source   = "registry.coder.com/coder/code-server/coder"
+  version  = "1.5.2"
+  agent_id = coder_agent.main.id
+  folder   = "/home/coder/${basename(trimsuffix(data.coder_parameter.repo_url.value, ".git"))}"
 
-  healthcheck {
-    url       = "http://localhost:13337/healthz"
-    interval  = 5
-    threshold = 6
-  }
+  extensions = ["ms-python.python", "ms-azuretools.vscode-docker"]
+  settings   = { "workbench.colorTheme" = "Default Dark Modern" }
 }
 
 resource "coder_app" "terminal" {
