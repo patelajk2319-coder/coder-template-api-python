@@ -67,6 +67,8 @@ locals {
   size = local.sizes[data.coder_parameter.instance_size.value]
 
   workspace_namespace = "coder-ws-${lower(data.coder_workspace_owner.me.name)}-${lower(data.coder_workspace.me.name)}"
+
+  repo_dir = "/home/coder/${basename(trimsuffix(data.coder_parameter.repo_url.value, ".git"))}"
 }
 
 # ── Workspace namespace ────────────────────────────────────────────────────────
@@ -252,24 +254,24 @@ module "code_server" {
   source   = "registry.coder.com/coder/code-server/coder"
   version  = "1.5.2"
   agent_id = coder_agent.main.id
-  folder   = "/home/coder/${basename(trimsuffix(data.coder_parameter.repo_url.value, ".git"))}"
+  folder   = local.repo_dir
 
   extensions = ["ms-python.python", "ms-azuretools.vscode-docker"]
   settings   = { "workbench.colorTheme" = "Default Dark Modern" }
 }
 
-resource "coder_app" "terminal" {
-  agent_id     = coder_agent.main.id
-  slug         = "terminal"
-  display_name = "Terminal"
-  command      = "/bin/bash"
-  icon         = "/icon/terminal.svg"
+module "vscode_desktop" {
+  source   = "registry.coder.com/coder/vscode-desktop/coder"
+  version  = "1.2.1"
+  agent_id = coder_agent.main.id
+  folder   = local.repo_dir
 }
 
 resource "coder_app" "api_python" {
   agent_id     = coder_agent.main.id
   slug         = "api-python"
   display_name = "api-python (docs)"
+  icon         = "/icon/python.svg"
   url          = "http://localhost:8000/docs"
   subdomain    = false
   share        = "owner"
