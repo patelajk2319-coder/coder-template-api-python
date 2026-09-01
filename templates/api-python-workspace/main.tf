@@ -13,17 +13,17 @@ terraform {
   }
 }
 
-# Fine-grained PAT scoped to the api-python repo (private) — never written to the pod spec.
-variable "github_token" {
-  description = "GitHub fine-grained PAT for cloning api-python and workspace Git operations"
-  type        = string
-  sensitive   = true
-}
-
 # ── Workspace parameters ───────────────────────────────────────────────────────
 
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
+
+# Each developer authorizes their own GitHub identity once via the dashboard —
+# no shared PAT baked into the template. Requires CODER_EXTERNAL_AUTH_0_ID=github
+# configured on the control plane (coder-demo-eks/terraform/coder).
+data "coder_external_auth" "github" {
+  id = "github"
+}
 
 data "coder_parameter" "repo_url" {
   name         = "repo_url"
@@ -144,7 +144,7 @@ resource "coder_agent" "main" {
   os   = "linux"
 
   env = {
-    GITHUB_TOKEN = var.github_token
+    GITHUB_TOKEN = data.coder_external_auth.github.access_token
     # dind sidecar shares this pod's network namespace — reachable over localhost.
     DOCKER_HOST = "tcp://localhost:2375"
   }

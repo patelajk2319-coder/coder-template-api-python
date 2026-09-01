@@ -21,7 +21,6 @@ set +a
 : "${CODER_URL:?CODER_URL must be set in .env}"
 : "${CODER_ADMIN_EMAIL:?CODER_ADMIN_EMAIL must be set in .env}"
 : "${CODER_ADMIN_PASSWORD:?CODER_ADMIN_PASSWORD must be set in .env}"
-: "${GITHUB_TOKEN:?GITHUB_TOKEN must be set in .env}"
 : "${TEMPLATE_OWNER:?TEMPLATE_OWNER must be set in .env}"
 : "${TEMPLATE_COST_CENTRE:?TEMPLATE_COST_CENTRE must be set in .env}"
 : "${TEMPLATE_TEAM:?TEMPLATE_TEAM must be set in .env}"
@@ -46,19 +45,13 @@ fi
 GOVERNANCE_DESC="owner: ${TEMPLATE_OWNER} | cost-centre: ${TEMPLATE_COST_CENTRE} | team: ${TEMPLATE_TEAM} | env: ${TEMPLATE_ENV}"
 
 # ── Authenticate ───────────────────────────────────────────────────────────────
-TOKEN=$(curl -sf -X POST "${CODER_URL}/api/v2/users/login" \
-  -H "Content-Type: application/json" \
-  -d "{\"email\":\"${CODER_ADMIN_EMAIL}\",\"password\":\"${CODER_ADMIN_PASSWORD}\"}" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['session_token'])")
-
-coder login "${CODER_URL}" --token "${TOKEN}" &>/dev/null
+coder_login
 
 echo "[----] Pushing ${TEMPLATE_NAME}@${VERSION} to ${CODER_URL}..."
 coder templates push "${TEMPLATE_NAME}" \
   --directory "${ROOT_DIR}/templates/${TEMPLATE_NAME}" \
   --name "${VERSION}" \
   --yes \
-  --variable "github_token=${GITHUB_TOKEN}" \
   "${PROVISIONER_TAG_FLAGS[@]}"
 
 TEMPLATE_ID=$(curl -sf \

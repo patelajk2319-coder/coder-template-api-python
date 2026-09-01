@@ -19,3 +19,15 @@ require_coder_reachable() {
   echo "[error] Start the port-forward first: task port-forward (in coder-demo-eks)" >&2
   exit 1
 }
+
+# Logs in as CODER_ADMIN_EMAIL/CODER_ADMIN_PASSWORD and authenticates the
+# coder CLI against CODER_URL. Requires all three to already be set. Sets
+# TOKEN in the caller's shell (deliberately not `local`) for scripts that also
+# need it for direct API calls the coder CLI doesn't cover.
+coder_login() {
+  TOKEN=$(curl -sf -X POST "${CODER_URL}/api/v2/users/login" \
+    -H "Content-Type: application/json" \
+    -d "{\"email\":\"${CODER_ADMIN_EMAIL}\",\"password\":\"${CODER_ADMIN_PASSWORD}\"}" \
+    | python3 -c "import sys,json; print(json.load(sys.stdin)['session_token'])")
+  coder login "${CODER_URL}" --token "${TOKEN}" &>/dev/null
+}

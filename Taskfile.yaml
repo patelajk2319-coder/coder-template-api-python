@@ -36,3 +36,10 @@ tasks:
     cmds:
       - bash scripts/logs.sh
 
+  validate:
+    desc: terraform fmt/validate + shellcheck
+    cmds:
+      - terraform -chdir=templates/api-python-workspace fmt -check -diff
+      - terraform -chdir=templates/api-python-workspace validate
+      - shellcheck scripts/*.sh scripts/lib/*.sh
+

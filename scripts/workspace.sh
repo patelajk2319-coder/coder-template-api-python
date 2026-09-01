@@ -34,12 +34,7 @@ require_coder_reachable
 WORKSPACE_NAME="${1:?Usage: workspace.sh <workspace-name>}"
 
 # ── Authenticate ───────────────────────────────────────────────────────────────
-TOKEN=$(curl -sf -X POST "${CODER_URL}/api/v2/users/login" \
-  -H "Content-Type: application/json" \
-  -d "{\"email\":\"${CODER_ADMIN_EMAIL}\",\"password\":\"${CODER_ADMIN_PASSWORD}\"}" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['session_token'])")
-
-coder login "${CODER_URL}" --token "${TOKEN}" &>/dev/null
+coder_login
 echo "[info] Authenticated as ${CODER_ADMIN_EMAIL}"
 
 # ── Provision workspace ────────────────────────────────────────────────────────

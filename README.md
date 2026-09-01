@@ -18,7 +18,10 @@ requires unique template version names).
   LoadBalancer is internal-only, so this repo talks to it over
   `http://localhost:8080`.
 - `coder`, `terraform`, `go-task`, `jq` installed locally.
-- A GitHub fine-grained PAT scoped to read the (private) `api-python` repo.
+- GitHub external auth configured on `coder-demo-eks` (`CODER_EXTERNAL_AUTH_0_*`,
+  see that repo's README) — each developer authorizes their own GitHub identity
+  from the Coder dashboard on first workspace build; no PAT is baked into this
+  template.
 
 ## How it works
 
@@ -42,7 +45,7 @@ runs it against the sidecar.
 ## Quick start
 
 ```bash
-cp .env.example .env   # fill in CODER_ADMIN_PASSWORD, GITHUB_TOKEN, template metadata
+cp .env.example .env   # fill in CODER_ADMIN_PASSWORD, template metadata
 
 task up                 # push the template, provision a workspace
 task logs                # tail the workspace's startup logs
