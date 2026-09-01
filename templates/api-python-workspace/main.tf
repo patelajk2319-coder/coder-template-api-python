@@ -149,6 +149,9 @@ resource "coder_agent" "main" {
     GITHUB_TOKEN = data.coder_external_auth.github.access_token
     # dind sidecar shares this pod's network namespace — reachable over localhost.
     DOCKER_HOST = "tcp://localhost:2375"
+    # Lets api-python's own `task build` print the exact port-forward command —
+    # unset when api-python is run standalone outside a Coder workspace.
+    CODER_WORKSPACE_NAME = data.coder_workspace.me.name
   }
 
   # Blocking: agent doesn't report ready until startup script exits.
