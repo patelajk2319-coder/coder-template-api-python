@@ -7,36 +7,51 @@ workspace, a developer can still `docker build`/`docker run` like they would
 locally.
 
 ## Versioning
-`task template` pushes a new Coder template revision named after whatever's currently in `VERSION`, so bump it before
-pushing a new revision (pushing the same version name twice fails — Coder
-requires unique template version names).
+`task template` pushes a new Coder template revision named after whatever's
+currently in `VERSION`, so bump it before pushing a new revision (pushing the
+same version name twice fails — Coder requires unique template version names).
 
 `task template` applies `terraform/coderd` (the `coderd` Terraform provider,
-not the `coder` CLI) — a separate Terraform root from `templates/api-python-workspace`,
-which is the workspace template's own Terraform, executed by the provisioner on
-each build. `task workspace` and `task logs` still go through the `coder` CLI
-directly — there's no Terraform resource for provisioning an ephemeral
-workspace or streaming its logs.
+not the `coder` CLI) — a separate Terraform root from
+`templates/api-python-workspace`, which is the workspace template's own
+Terraform, executed by the provisioner on each build. `task workspace` and
+`task logs` still go through the `coder` CLI directly — there's no Terraform
+resource for provisioning an ephemeral workspace or streaming its logs.
 
 ## Prerequisites
 
-Everything below describes the Coder control plane you're pushing this
-template to — ask its platform team for these, then fill them into `.env`
-(see `.env.example`):
+### Control Plane
+This repo pushes a template onto an existing Coder control plane — it
+doesn't deploy one. Get these from that control plane's platform team:
+- a reachable Coder URL (typically via port-forward)
+- admin credentials
+- a long-lived API token for the `coderd` Terraform provider
+- GitHub external auth configured, so developers authenticate with their
+  own GitHub identity on first build
 
-- **A reachable Coder URL** (`CODER_URL`) — typically a port-forward, since
-  Coder's LoadBalancer is usually internal-only.
-- **Admin credentials** (`CODER_ADMIN_EMAIL`/`CODER_ADMIN_PASSWORD`) — used
-  by `task workspace`/`task logs` only (`coder create` / log streaming have
-  no Terraform equivalent).
-- **A long-lived API token** (`CODER_API_TOKEN`) for the `coderd` Terraform
-  provider (`task template`).
-- **GitHub external auth configured** on the control plane
-  (`CODER_EXTERNAL_AUTH_0_*`) — each developer authorizes their own GitHub
-  identity from the Coder dashboard on first workspace build; no PAT is
-  baked into this template.
+### Required Tools (install via Homebrew)
+```bash
+brew install terraform coder go-task shellcheck
+```
 
-Also needed locally: `coder`, `terraform`, `go-task`, `shellcheck`.
+## Configuration
+
+Copy `.env.example` to `.env`.
+
+**You fill in:**
+
+| Variable Name | Description |
+|----------------|-------------|
+| `CODER_URL` | Coder URL, from the control plane |
+| `CODER_ADMIN_EMAIL` / `CODER_ADMIN_PASSWORD` | Admin login, used by `task workspace`/`task logs` |
+| `CODER_API_TOKEN` | API token for the `coderd` Terraform provider (`task template`) |
+| `WORKSPACE_REPO` | Git repo the workspace clones and runs |
+| `PROVISIONER_TAG` | Optional — routes builds to a specific external provisioner instead of the control plane's built-in ones |
+| `TEMPLATE_OWNER` / `TEMPLATE_COST_CENTRE` / `TEMPLATE_TEAM` / `TEMPLATE_ENV` | Template governance metadata |
+| `TEMPLATE_DEFAULT_TTL` | Autostop TTL for workspaces (e.g. `4h`) |
+| `TEMPLATE_ACTIVITY_BUMP` | Extends autostop on activity (e.g. `1h`) |
+
+Nothing here is auto-populated by scripts — every variable is yours to fill in.
 
 ## How it works
 
@@ -61,50 +76,53 @@ runs it against the sidecar.
 `count = data.coder_workspace.me.start_count` means Terraform's destroy (on
 workspace stop) calls the Kubernetes delete API directly on that exact pod,
 with no intermediate controller that could independently keep it alive. A
-Deployment's own reconciler sits in between — external drift (a stuck
-rollout, a manual `kubectl scale`, an HPA) can desync its replica count from
-what Terraform last applied, so a workspace can show "stopped" in Coder
-while its pod is still running. A workspace is also a unique, stateful,
-individually-owned environment, not a fleet of interchangeable replicas —
-there's nothing for a Deployment's self-healing/rolling-update machinery to
-usefully do here.
+workspace is also a unique, stateful, individually-owned environment, not a
+fleet of interchangeable replicas.
 
-**Disk usage**: `resources_monitoring` on the agent alerts in the Coder
-dashboard at 90% of the 50Gi home PVC — a real ceiling, not padding; earlier
-10Gi default proved too tight (real usage has hit 47-50GB).
+**Disk usage**: `resources_monitoring` alerts in the Coder dashboard at 90%
+of the 50Gi home PVC — a real ceiling, not padding.
 
 **First build can take several minutes** if the cluster needs to schedule a
 new node — Coder can only stream logs once the agent starts, so there's an
-inherent gap with no visible progress before that. Restarting during this
-gap doesn't help; it cancels the in-flight build and starts the wait over.
+inherent gap with no visible progress before that.
 
-## Quick start
+## Quick Start
 
+### 1. Clone the Repository
 ```bash
-cp .env.example .env   # fill in CODER_ADMIN_PASSWORD, CODER_API_TOKEN, template metadata
-
-task template            # push the template
-task workspace           # provision a workspace
-task logs                # tail the workspace's startup logs
+git clone https://github.com/patelajk2319-coder/coder-template-api-python.git
+cd coder-template-api-python
 ```
 
-## Local API access
+### 2. Create `.env` File
+```bash
+cp .env.example .env
+```
 
-This repo is for whoever owns the template — developers should never
-need it.
+Fill in the values described in [Configuration](#configuration) above.
 
-Developers can run the following command to get connect to a workspace running this template from their local machine
+### 3. Push the Template and Provision a Workspace
+```bash
+task template    # push the template
+task workspace   # provision a workspace
+task logs         # tail the workspace's startup logs
+```
+
+## Local API Access
+
+This repo is for whoever owns the template — developers should never need
+it. Developers connect to a workspace running this template with:
 
 ```bash
 coder port-forward <workspace-name> --tcp 8000:8000
 ```
 
-## Commands
+## Available Commands
 
-| Command          | Description                                                    |
-|------------------|-------------------------------------------------------------------|
-| `task template`  | Push/update the template via Terraform, versioned from `VERSION`   |
-| `task release`   | Tag and push the current `VERSION` as a git release (`vX.Y.Z`)      |
-| `task workspace` | Provision a workspace (`NAME=<name>` to override the name)          |
-| `task logs`      | Stream startup logs from the active workspace                       |
-| `task validate`  | `terraform fmt`/`validate` + `shellcheck`                            |
+| Task | Description |
+|------|-------------|
+| `task template` | Push/update the template via Terraform, versioned from `VERSION` |
+| `task release` | Tag and push the current `VERSION` as a git release (`vX.Y.Z`) |
+| `task workspace` | Provision a workspace (`NAME=<name>` to override the name) |
+| `task logs` | Stream startup logs from the active workspace |
+| `task validate` | `terraform fmt`/`validate` + shellcheck |
