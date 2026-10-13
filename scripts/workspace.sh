@@ -2,7 +2,7 @@
 # Provision a developer workspace from the api-python-workspace template.
 # The workspace is pre-configured with the IDE, tooling, Docker-in-Docker
 # sidecar, and repo — zero setup for the developer.
-# Requires: task init in coder-demo-eks must have been run first.
+# Requires: a reachable, initialised Coder control plane — see README Prerequisites.
 
 set -euo pipefail
 

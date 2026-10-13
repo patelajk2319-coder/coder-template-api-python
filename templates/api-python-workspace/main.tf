@@ -13,6 +13,17 @@ terraform {
   }
 }
 
+# Set via coderd_template's versions[].tf_vars in terraform/coderd/main.tf,
+# per pushed template version — not a coder_parameter, since this isn't a
+# user-facing choice. Empty means "the default/built-in provisioner" (no
+# node-pool taints exist there to target); non-empty names a labeled,
+# tainted node pool this workspace must schedule onto instead, for template
+# versions routed to an external provisioner whose cluster has one.
+variable "team_node_pool" {
+  type    = string
+  default = ""
+}
+
 # ── Workspace parameters ───────────────────────────────────────────────────────
 
 data "coder_workspace" "me" {}
@@ -20,7 +31,7 @@ data "coder_workspace_owner" "me" {}
 
 # Each developer authorizes their own GitHub identity once via the dashboard —
 # no shared PAT baked into the template. Requires CODER_EXTERNAL_AUTH_0_ID=github
-# configured on the control plane (coder-demo-eks/terraform/coder).
+# configured on the control plane.
 data "coder_external_auth" "github" {
   id = "github"
 }
@@ -132,7 +143,11 @@ resource "kubernetes_persistent_volume_claim" "home" {
     access_modes       = ["ReadWriteOnce"]
     storage_class_name = "gp3"
     resources {
-      requests = { storage = "10Gi" }
+      # 10Gi was too tight in practice — real usage has hit 47-50GB on
+      # comparable workspaces. resources_monitoring below gives an early
+      # warning at 90%; this just sets the ceiling that warning has room
+      # under.
+      requests = { storage = "50Gi" }
     }
   }
 
@@ -144,6 +159,17 @@ resource "kubernetes_persistent_volume_claim" "home" {
 resource "coder_agent" "main" {
   arch = "amd64"
   os   = "linux"
+
+  # Alerts in the Coder dashboard at 90% disk usage — distinct from the
+  # "Disk" metadata block below, which is just a display value with no
+  # threshold. PVC fills are the #1 cause of silent workspace failures.
+  resources_monitoring {
+    volume {
+      path      = "/home/coder"
+      enabled   = true
+      threshold = 90
+    }
+  }
 
   env = {
     GITHUB_TOKEN = data.coder_external_auth.github.access_token
@@ -194,7 +220,7 @@ resource "coder_agent" "main" {
     # ── Clone (or update) repository ───────────────────────────────────────────
     # $HOME is a persistent PVC — on a restart this directory already exists
     # from a previous boot, so pull the latest instead of only cloning once.
-    REPO_DIR="$HOME/$(basename "${data.coder_parameter.repo_url.value}" .git)"
+    REPO_DIR="${local.repo_dir}"
     if [[ ! -d "$REPO_DIR" ]]; then
       git clone --depth=1 "${data.coder_parameter.repo_url.value}" "$REPO_DIR"
     else
@@ -273,6 +299,11 @@ module "code_server" {
 }
 
 # ── Workspace pod ──────────────────────────────────────────────────────────────
+# First build can take several minutes if the cluster needs to schedule a new
+# node for it — Coder's dashboard can only stream logs once the agent inside
+# this pod starts, so there's an inherent gap with no visible progress before
+# that. Restarting during this gap does not speed anything up; it cancels the
+# in-flight build and starts the wait over.
 
 resource "kubernetes_pod" "workspace" {
   count = data.coder_workspace.me.start_count
@@ -296,6 +327,23 @@ resource "kubernetes_pod" "workspace" {
       run_as_user     = 1000
       run_as_non_root = true
       fs_group        = 1000
+    }
+
+    # Only set when routed to a cluster with a tainted workspaces node pool
+    # — see var.team_node_pool. Left unset, the pod schedules anywhere the
+    # default/built-in provisioner's cluster allows, same as before.
+    node_selector = var.team_node_pool != "" ? {
+      "coder.com/node-pool" = var.team_node_pool
+    } : null
+
+    dynamic "toleration" {
+      for_each = var.team_node_pool != "" ? [var.team_node_pool] : []
+      content {
+        key      = "coder.com/node-pool"
+        operator = "Equal"
+        value    = toleration.value
+        effect   = "NoSchedule"
+      }
     }
 
     # Prevents lateral movement via the K8s API from a compromised workspace.

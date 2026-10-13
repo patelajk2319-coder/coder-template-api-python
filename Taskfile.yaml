@@ -1,6 +1,6 @@
-# Deploys the api-python workspace template onto an already-running Coder instance.
-# Coder itself (EKS, RDS, Secrets Manager) is owned by the coder-demo-eks repo —
-# run its infra/coder/init tasks first; this repo never touches infra.
+# Deploys the api-python workspace template onto an already-running Coder
+# instance. Coder itself is owned by a separate platform repo — this repo
+# never touches infra, see README Prerequisites.
 
 version: '3'
 
@@ -8,15 +8,10 @@ dotenv: ['.env']
 
 tasks:
 
-  up:
-    desc: Full demo — push template, provision a developer workspace
-    cmds:
-      - task: template
-
   template:
-    desc: Push the workspace template to Coder, versioned from VERSION (bump it first for a new revision)
+    desc: Push the workspace template to Coder via Terraform (coderd provider), versioned from VERSION (bump it first for a new revision)
     cmds:
-      - bash scripts/template.sh
+      - bash scripts/40_deploy_template.sh
 
   release:
     desc: Tag and push the current VERSION as a git release (vX.Y.Z)
@@ -41,5 +36,7 @@ tasks:
     cmds:
       - terraform -chdir=templates/api-python-workspace fmt -check -diff
       - terraform -chdir=templates/api-python-workspace validate
+      - terraform -chdir=terraform/coderd fmt -check -diff
+      - terraform -chdir=terraform/coderd validate
       - shellcheck scripts/*.sh scripts/lib/*.sh
 

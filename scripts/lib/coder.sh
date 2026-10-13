@@ -16,7 +16,7 @@ exit(r.returncode)
 require_coder_reachable() {
   curl -sf --max-time 3 "${CODER_URL}/healthz" &>/dev/null && return 0
   echo "[error] Coder not reachable at ${CODER_URL}" >&2
-  echo "[error] Start the port-forward first: task port-forward (in coder-demo-eks)" >&2
+  echo "[error] Start the control plane's port-forward first, then retry" >&2
   exit 1
 }
 
