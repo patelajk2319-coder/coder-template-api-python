@@ -299,14 +299,19 @@ module "code_server" {
 }
 
 # ── Workspace pod ──────────────────────────────────────────────────────────────
-# First build can take several minutes if the cluster needs to schedule a new
-# node for it — Coder's dashboard can only stream logs once the agent inside
-# this pod starts, so there's an inherent gap with no visible progress before
-# that. Restarting during this gap does not speed anything up; it cancels the
-# in-flight build and starts the wait over.
+# The build itself no longer waits through node scale-up/image pull (see
+# target_state below) — but Coder's dashboard still can't stream logs until
+# the agent inside this pod actually starts, so a cold node still shows as
+# "running, agent not connected" with no progress for a bit. Restarting
+# during that gap does not speed anything up; it cancels the in-flight build.
 
 resource "kubernetes_pod" "workspace" {
   count = data.coder_workspace.me.start_count
+
+  # Default target_state=["Running"] blocks the build through node scale-up
+  # and image pull with zero log output. "Pending" covers both — returning
+  # there instead skips the wait without giving up direct-delete semantics.
+  target_state = ["Pending", "Running"]
 
   metadata {
     name      = "coder-${lower(data.coder_workspace_owner.me.name)}-${lower(data.coder_workspace.me.name)}"
