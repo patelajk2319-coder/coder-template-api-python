@@ -6,17 +6,26 @@ Docker-in-Docker on Coder: even inside a Kubernetes-backed, redirected
 workspace, a developer can still `docker build`/`docker run` like they would
 locally.
 
+## Two Terraform Roots — Not One
+
+This repo has two separate, easy-to-conflate Terraform directories:
+
+| | `templates/api-python-workspace/` | `terraform/template-registration/` |
+|---|---|---|
+| Defines | The workspace itself (pod, PVC, agent) | The *template resource* on Coder's control plane (metadata, versions, TTLs) |
+| Provider | `coder` + `kubernetes` | `coderd` (Coder's admin API) |
+| Runs via | Coder's own provisioner, automatically, on every workspace build | You, manually, via `task template` |
+
+You never run `terraform apply` on `templates/api-python-workspace/`
+yourself — only the provisioner does, as part of building a workspace.
+
 ## Versioning
 `task template` pushes a new Coder template revision named after whatever's
 currently in `VERSION`, so bump it before pushing a new revision (pushing the
 same version name twice fails — Coder requires unique template version names).
-
-`task template` applies `terraform/coderd` (the `coderd` Terraform provider,
-not the `coder` CLI) — a separate Terraform root from
-`templates/api-python-workspace`, which is the workspace template's own
-Terraform, executed by the provisioner on each build. `task workspace` and
-`task logs` still go through the `coder` CLI directly — there's no Terraform
-resource for provisioning an ephemeral workspace or streaming its logs.
+`task workspace` and `task logs` still go through the `coder` CLI directly —
+there's no Terraform resource for provisioning an ephemeral workspace or
+streaming its logs.
 
 ## Prerequisites
 

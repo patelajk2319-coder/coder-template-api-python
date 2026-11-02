@@ -1,3 +1,7 @@
+# Registers the template at ../../templates/api-python-workspace with
+# the coderd API — defines no workspace resources itself. Run by you,
+# manually, via `task template`.
+
 data "coderd_organization" "default" {
   is_default = true
 }

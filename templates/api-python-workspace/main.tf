@@ -1,3 +1,7 @@
+# This is the workspace template itself — run by Coder's own provisioner
+# on every build, never by you directly. Registered with the control
+# plane via ../../terraform/template-registration (`task template`).
+
 terraform {
   required_version = ">= 1.5.0"
 
@@ -17,8 +21,9 @@ terraform {
   }
 }
 
-# Set via coderd_template's versions[].tf_vars in terraform/coderd/main.tf,
-# per pushed template version — not a coder_parameter, since this isn't a
+# Set via coderd_template's versions[].tf_vars in
+# terraform/template-registration/main.tf, per pushed template version —
+# not a coder_parameter, since this isn't a
 # user-facing choice. Empty means "the default/built-in provisioner" (no
 # node-pool taints exist there to target); non-empty names a labeled,
 # tainted node pool this workspace must schedule onto instead, for template
