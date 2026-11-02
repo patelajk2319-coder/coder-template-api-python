@@ -10,13 +10,13 @@ locally.
 
 This repo has two separate, easy-to-conflate Terraform directories:
 
-| | `templates/api-python-workspace/` | `terraform/template-registration/` |
+| | `terraform/templates/define/` | `terraform/templates/register/` |
 |---|---|---|
 | Defines | The workspace itself (pod, PVC, agent) | The *template resource* on Coder's control plane (metadata, versions, TTLs) |
 | Provider | `coder` + `kubernetes` | `coderd` (Coder's admin API) |
 | Runs via | Coder's own provisioner, automatically, on every workspace build | You, manually, via `task template` |
 
-You never run `terraform apply` on `templates/api-python-workspace/`
+You never run `terraform apply` on `terraform/templates/define/`
 yourself — only the provisioner does, as part of building a workspace.
 
 ## Versioning

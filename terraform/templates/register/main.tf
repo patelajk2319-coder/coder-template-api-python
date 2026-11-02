@@ -1,4 +1,4 @@
-# Registers the template at ../../templates/api-python-workspace with
+# Registers the template at ../define with
 # the coderd API — defines no workspace resources itself. Run by you,
 # manually, via `task template`.
 
@@ -21,7 +21,7 @@ locals {
   }]
 
   # Tells the template which node pool to target on the external cluster
-  # that provisioner_tags routes it to — see templates/api-python-workspace's
+  # that provisioner_tags routes it to — see terraform/templates/define's
   # var.team_node_pool. Only one external cluster exists today, so this is
   # a flat "tagged or not" coupling; a second one would need its own
   # node-pool value, not just this boolean.
@@ -41,7 +41,7 @@ resource "coderd_template" "api_python_workspace" {
   activity_bump_ms = local.activity_bump_ms
 
   versions = [{
-    directory        = "${path.module}/../../templates/api-python-workspace"
+    directory        = "${path.module}/../define"
     name             = "v${var.template_version}"
     active           = true
     provisioner_tags = local.provisioner_tags
